@@ -30,17 +30,19 @@ class Ciudad {
     trimestres.reverse().take(cantidad).reverse()
 
   method aplicarEvento(evento) {
-    self.registrarTrimestre()
+    self.registrarTrimestre(evento)
     evento.aplicarA(self)
   }
 
-  method registrarTrimestre() {
-    trimestres.add(new Trimestre(pbiPerCapita = self.pbiPerCapita()))
+  method registrarTrimestre(evento) {
+    trimestres.add(
+        new Trimestre(pbiPerCapita = self.pbiPerCapita(), evento = evento)
+        )
   }
 
   method modificarPoblacion(porcentaje) {
     bloques.forEach{ b => b.modificarPoblacion(porcentaje) }
-    self.bloquesSobrepoblados().forEach{ b => b.reorganizarEn(self) }
+    self.bloquesSobrepoblados().forEach{ b => b.reorganizar() }
   }
 
   method bloquesSobrepoblados() = bloques.filter{ b => b.estaSobrepoblado() }
@@ -48,13 +50,46 @@ class Ciudad {
   method nuevoBloqueResidencial(cantidadHabitantes) {
     const nuevoBloque = 
       new BloqueResidencial(
-          cantidadHabitantes=cantidadHabitantes, 
-          vecinos = bloques.reverse().take(3))
+          vecinos = self.ultimosBloques(3),
+          ciudad = self,
+          cantidadHabitantes = cantidadHabitantes)
     bloques.add(nuevoBloque)
   }
+
+  method incrementarEconomia(porcentaje) {
+    bloques.forEach{ b => b.incrementarEconomia(porcentaje)}
+    if (self.pbiPerCapita() > 1000)
+      self.nuevoBloqueIndustrial()
+  }
+
+  method ultimosBloques(cantidad) = bloques.reverse().take(cantidad)
+
+  method nuevoBloqueIndustrial() {
+    const bloquesVecinos = self.ultimosBloques(3)
+    if (bloquesVecinos.any{b => b.tienePlazas()}) {
+      const nuevoBloque = new BloqueIndustrial(
+          vecinos = bloquesVecinos,
+          ciudad = self,
+          produccion = self.promedioEconomico())
+      bloques.add(nuevoBloque)
+    }
+  }
+
+  method promedioEconomico() = self.pbi() / bloques.size()
+
+  method eliminarBloquesViejos(cantidad) {
+    const bloquesViejos = bloques.take(cantidad)
+    bloques.removeAll(bloquesViejos)
+    bloques.forEach{ b => b.eliminarVecinos(bloquesViejos) }
+  }
+
+  method puedeSerFeliz() = trimestres.last().permiteFelicidad()
 
 }
 
 class Trimestre {
   const property pbiPerCapita
+  const property evento 
+
+  method permiteFelicidad() = evento.permiteFelicidad()
 }

@@ -1,5 +1,7 @@
 class Bloque {
   const vecinos
+  const ciudad
+
   //Pto 1
   method estaCeloso() = vecinos.all{ vecino => vecino.estaMejorQue(self) }
 
@@ -17,7 +19,7 @@ class Bloque {
 
   //Pto 4 :D 
   method esFeliz() = self.tienePlazas() and not self.estaCeloso() 
-    and self.menosPoblacionQueVecinos()
+    and self.menosPoblacionQueVecinos() and ciudad.puedeSerFeliz()
 
   method menosPoblacionQueVecinos() = 
     self.poblacionTotalVecinos() > self.cantidadHabitantes()
@@ -27,11 +29,16 @@ class Bloque {
 
   method estaSobrepoblado() = self.cantidadHabitantes() > 100000
 
+  method eliminarVecinos(bloquesViejos) {
+    vecinos.removeAll(bloquesViejos)
+  }
+
   method modificarPoblacion(porcentaje)
   method economia()
   method cantidadHabitantes()
   method cantidadPlazas()
   method parquizar()
+  method incrementarEconomia(porcentaje)
 
 }
 
@@ -50,7 +57,11 @@ class BloqueResidencial inherits Bloque {
     cantidadHabitantes += cantidadHabitantes * porcentaje / 100
   }
 
-  method reorganizarEn(ciudad) {
+  override method incrementarEconomia(porcentaje) {
+    comercios.forEach{ c => c.incrementarEconomia(porcentaje)}
+  }
+
+  method reorganizar() {
     cantidadHabitantes = cantidadHabitantes / 2
     ciudad.nuevoBloqueResidencial(cantidadHabitantes)
   }
@@ -59,6 +70,10 @@ class BloqueResidencial inherits Bloque {
 
 class Comercio {
   var property aporteEconomico
+
+  method incrementarEconomia(porcentaje) {
+    aporteEconomico += aporteEconomico * porcentaje / 100
+  }
 }
 
 class BloqueIndustrial inherits Bloque {
@@ -72,6 +87,10 @@ class BloqueIndustrial inherits Bloque {
   override method cantidadHabitantes() = 0 // Otra solución distinta a la cantidad de Plazas
 
   override method modificarPoblacion(porcentaje) { } //No pasa nah'
+
+  override method incrementarEconomia(porcentaje) {
+    produccion += produccion * porcentaje / 100
+  }
 }
 
 
